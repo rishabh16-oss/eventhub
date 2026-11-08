@@ -2,6 +2,7 @@ package com.rishabh.eventhub.controller;
 
 import com.rishabh.eventhub.dto.EventRequest;
 import com.rishabh.eventhub.dto.EventResponse;
+import com.rishabh.eventhub.dto.PageResponse;
 import com.rishabh.eventhub.service.EventService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +25,13 @@ public class EventController {
     }
 
     @GetMapping
-    public List<EventResponse> getAll() {
-        return eventService.getAll();
+    public PageResponse<EventResponse> getAll(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "startTime") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+        return eventService.search(keyword, page, size, sortBy, direction);
     }
 
     @GetMapping("/{id}")

@@ -2,14 +2,20 @@ package com.rishabh.eventhub.service;
 
 import com.rishabh.eventhub.dto.EventRequest;
 import com.rishabh.eventhub.dto.EventResponse;
+import com.rishabh.eventhub.dto.PageResponse;
 import com.rishabh.eventhub.entity.Event;
 import com.rishabh.eventhub.exception.InvalidRequestException;
 import com.rishabh.eventhub.exception.ResourceNotFoundException;
 import com.rishabh.eventhub.repository.EventRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -30,10 +36,34 @@ public class EventService {
         return toResponse(eventRepository.save(event));
     }
 
-    public List<EventResponse> getAll() {
-        return eventRepository.findAll().stream()
-                .map(this::toResponse)
-                .toList();
+    private static final Set<String> SORTABLE_FIELDS =
+            Set.of("title", "startTime", "price", "venue");
+
+    public PageResponse<EventResponse> search(String keyword, int page, int size,
+                                              String sortBy, String direction) {
+        if (!SORTABLE_FIELDS.contains(sortBy)) {
+            throw new InvalidRequestException("Cannot sort by: " + sortBy);
+        }
+        size = Math.min(size, 50); // cap the page size
+
+        Sort sort = direction.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<Event> result = (keyword == null || keyword.isBlank())
+                ? eventRepository.findAll(pageable)
+                : eventRepository
+                .findByTitleContainingIgnoreCaseOrVenueContainingIgnoreCase(
+                        keyword, keyword, pageable);
+
+        return new PageResponse<>(
+                result.getContent().stream().map(this::toResponse).toList(),
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages(),
+                result.isLast());
     }
 
     public EventResponse getById(Long id) {
