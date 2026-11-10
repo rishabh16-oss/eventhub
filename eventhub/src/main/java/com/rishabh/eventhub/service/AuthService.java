@@ -1,5 +1,7 @@
 package com.rishabh.eventhub.service;
 
+import com.rishabh.eventhub.dto.AuthResponse;
+import com.rishabh.eventhub.dto.LoginRequest;
 import com.rishabh.eventhub.dto.RegisterRequest;
 import com.rishabh.eventhub.dto.UserResponse;
 import com.rishabh.eventhub.entity.Role;
@@ -7,6 +9,10 @@ import com.rishabh.eventhub.entity.User;
 import com.rishabh.eventhub.exception.DuplicateResourceException;
 import com.rishabh.eventhub.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -33,5 +39,18 @@ public class AuthService {
 
         User saved = userRepository.save(user);
         return new UserResponse(saved.getId(), saved.getName(), saved.getEmail(), saved.getRole());
+    }
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
+    private final UserDetailsService userDetailsService;
+
+    public AuthResponse login(LoginRequest request) {
+        String email = request.email().trim().toLowerCase();
+
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(email, request.password()));
+
+        UserDetails user = userDetailsService.loadUserByUsername(email);
+        return new AuthResponse(jwtService.generateToken(user), "Bearer");
     }
 }

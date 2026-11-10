@@ -1,5 +1,7 @@
 package com.rishabh.eventhub.controller;
 
+import com.rishabh.eventhub.dto.AuthResponse;
+import com.rishabh.eventhub.dto.LoginRequest;
 import com.rishabh.eventhub.dto.RegisterRequest;
 import com.rishabh.eventhub.dto.UserResponse;
 import com.rishabh.eventhub.service.AuthService;
@@ -19,5 +21,9 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
+    }
+    @PostMapping("/login")
+    public AuthResponse login(@Valid @RequestBody LoginRequest request) {
+        return authService.login(request);
     }
 }
